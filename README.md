@@ -38,6 +38,10 @@ built from multiple dimensions:
 
 This approach moves beyond simple clustering and enables **decision-oriented insights**.
 
+<img width="222" height="823" alt="image" src="https://github.com/user-attachments/assets/218ee31f-8672-4670-92e1-3be61cda2189" />
+
+
+
 ---
 
 ## 📊 System Capabilities
@@ -56,6 +60,26 @@ Cosine similarity is used to identify customers with comparable behavioral patte
 
 ### 🔹 Confidence-Aware Outputs
 Predictions are accompanied by confidence or probability scores to support reliable decision-making.
+
+
+---
+
+## 🔄 Analytical Workflow
+
+```text
+Raw Transactions
+   ↓
+Data Cleaning & Validation
+   ↓
+Customer-Level Feature Engineering
+   ↓
+Behavioral Clustering
+   ↓
+Predictive Modeling (Value & Risk)
+   ↓
+Confidence Scoring
+   ↓
+Interactive Dashboard
 
 ---
 
