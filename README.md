@@ -53,21 +53,6 @@ This system is built to address those exact gaps.
 
 ## 🔄 Analytical Workflow
 
-```text
-Raw Transactions
-   ↓
-Data Cleaning & Validation
-   ↓
-Customer-Level Feature Engineering
-   ↓
-Behavioral Clustering
-   ↓
-Predictive Modeling (Value & Risk)
-   ↓
-Confidence Scoring
-   ↓
-Interactive Dashboard
-
 ---
 
 ## Accepted Input Data Format
