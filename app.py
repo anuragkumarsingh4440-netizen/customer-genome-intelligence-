@@ -2,25 +2,98 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
-
+import matplotlib.pyplot as plt
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics.pairwise import cosine_similarity
 
+# This block configures the Streamlit application layout
+# Sets page title used in browser tab
+# Enables wide layout for dashboard-style UI
+# Sidebar is expanded by default
+# This runs once when app starts
+# Core visual foundation of the app
 st.set_page_config(
     page_title="Customer Genome Intelligence",
     layout="wide",
     initial_sidebar_state="expanded"
 )
 
-st.markdown(
-    """
-    <style>
-    .block-container { padding-top: 2rem; }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
+# This block injects global CSS styling
+# Controls background color and typography
+# Defines hero heading visual appearance
+# Improves executive readability
+# Applies glow and gradient effects
+# Affects entire application UI
+st.markdown("""
+<style>
+body {
+    background-color: #070b16;
+    color: #e5e7eb;
+}
+.block-container {
+    padding-top: 1rem;
+}
+</style>
+""", unsafe_allow_html=True)
 
+# This block renders the main hero heading
+# Designed to look like a product banner
+# Full-width container with gradient background
+# Large font size for strong visual impact
+# Matches enterprise SaaS landing style
+# Only visual change requested by user
+st.markdown("""
+<div style="
+    width:100%;
+    margin: 20px auto 40px auto;
+    padding: 50px 20px;
+    text-align:center;
+    background: linear-gradient(90deg, #1e3a8a, #6d28d9);
+    border-radius: 22px;
+">
+    <div style="
+        font-size:88px;
+        font-weight:900;
+        color:white;
+        letter-spacing:1px;
+        text-shadow: 0 0 40px rgba(255,255,255,0.35);
+    ">
+        🧬 Customer Genome Intelligence
+    </div>
+    <div style="
+        margin-top:16px;
+        font-size:26px;
+        color:#e5e7eb;
+        font-weight:500;
+    ">
+        Behavioral Segmentation • Risk Intelligence • Real-Time Action Strategy
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# This block explains the dataset requirements
+# Helps users upload correct CSV structure
+# Prevents schema-related runtime errors
+# Displayed before any processing begins
+# Purely informational section
+# No effect on model logic
+st.markdown("""
+### 📘 Dataset Schema (Required Columns)
+
+- **customer_id**
+- **total_orders**
+- **total_quantity**
+- **total_spend**
+- **avg_order_value**
+- **recency_days**
+- **unique_products**
+""")
+
+# This block loads trained ML models
+# Uses Streamlit resource cache
+# Prevents repeated disk reads
+# Loads clustering and prediction models
+# Runs only once per session
+# Improves performance
 @st.cache_resource
 def load_models():
     behavior_model = joblib.load("models/behavior_model.pkl")
@@ -30,142 +103,161 @@ def load_models():
 
 behavior_model, value_model, stability_model = load_models()
 
-st.sidebar.title("Input Panel")
+# This block defines cluster labels
+# Maps numeric clusters to business meaning
+# Used across dashboard views
+# Improves interpretability
+# Keeps logic centralized
+# No computation here
+CLUSTER_LABELS = {
+    0: "🟢 Loyal & High Value",
+    1: "🔵 Growing Customers",
+    2: "🟡 Price Sensitive",
+    3: "🟠 At Risk",
+    4: "🔴 High Churn Risk"
+}
 
-uploaded_file = st.sidebar.file_uploader(
-    "Upload Clean Transaction CSV",
-    type=["csv"]
-)
+# This block defines recommended actions
+# Strategy tied to each cluster
+# Used in individual intelligence view
+# Business-facing explanations
+# Static configuration only
+# No model dependency
+CLUSTER_ACTIONS = {
+    0: "Retention focus, loyalty rewards, premium upsells",
+    1: "Cross-sell, personalized bundles, growth nudges",
+    2: "Discounts, pricing optimization, value packs",
+    3: "Re-engagement campaigns, reminders, incentives",
+    4: "Immediate retention calls and win-back offers"
+}
 
-run_button = st.sidebar.button("Build Customer Intelligence")
+# This block builds sidebar UI
+# Handles CSV upload
+# Explicit build button prevents auto rerun
+# Keeps user control clear
+# Minimal interaction logic
+# No data processing here
+st.sidebar.title("📂 Input Panel")
+uploaded_file = st.sidebar.file_uploader("Upload Customer-Level CSV", type=["csv"])
+build_button = st.sidebar.button("🚀 Build Intelligence")
 
-st.title("Customer Genome Intelligence Dashboard")
-st.write(
-    "Single-page interactive dashboard combining clustering, prediction, "
-    "risk assessment, similarity analysis, and confidence-aware decisions."
-)
-
-if uploaded_file is not None and run_button:
+# This block handles data preprocessing
+# Runs only after button click
+# Normalizes column names
+# Scales numerical features
+# Applies clustering model
+# Stores results in session state
+if build_button and uploaded_file is not None:
 
     df = pd.read_csv(uploaded_file)
 
-    required_cols = {
-        "customer_id",
-        "invoice_no",
-        "invoice_date",
-        "quantity",
-        "price",
-        "transaction_value"
-    }
-
-    if not required_cols.issubset(df.columns):
-        st.error("Uploaded file does not match required schema.")
-        st.stop()
-
-    df["invoice_date"] = pd.to_datetime(df["invoice_date"])
-
-    customer_features = (
-        df.groupby("customer_id")
-          .agg(
-              total_orders=("invoice_no", "nunique"),
-              total_quantity=("quantity", "sum"),
-              total_spend=("transaction_value", "sum"),
-              avg_order_value=("transaction_value", "mean")
-          )
-          .reset_index()
+    df.columns = (
+        df.columns.astype(str)
+        .str.strip()
+        .str.lower()
+        .str.replace(" ", "_")
     )
 
-    activity_days = (
-        df.groupby("customer_id")["invoice_date"]
-          .apply(lambda x: (x.max() - x.min()).days)
-          .reset_index(name="active_days")
-    )
-
-    customer_features = customer_features.merge(
-        activity_days, on="customer_id", how="left"
-    )
+    df = df.rename(columns={"customerid": "customer_id"})
 
     feature_cols = [
         "total_orders",
         "total_quantity",
         "total_spend",
         "avg_order_value",
-        "active_days"
+        "recency_days",
+        "unique_products"
     ]
 
     scaler = StandardScaler()
-    scaled_features = scaler.fit_transform(customer_features[feature_cols])
+    scaled_features = scaler.fit_transform(df[feature_cols])
+    df["cluster"] = behavior_model.predict(scaled_features)
 
-    customer_features["cluster"] = behavior_model.predict(scaled_features)
+    st.session_state.df = df
+    st.session_state.scaler = scaler
+    st.session_state.feature_cols = feature_cols
+    st.session_state.ready = True
 
-    st.subheader("Executive Overview")
+# This block renders the main dashboard
+# Reads processed data from session state
+# Displays metrics and charts
+# Allows individual customer analysis
+# Core intelligence section
+# Runs only when ready flag is set
+if st.session_state.get("ready", False):
+
+    df = st.session_state.df
+    scaler = st.session_state.scaler
+    feature_cols = st.session_state.feature_cols
+
+    st.subheader("📊 Executive Overview")
 
     c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Total Customers", customer_features.shape[0])
-    c2.metric("Avg Orders", round(customer_features["total_orders"].mean(), 2))
-    c3.metric("Avg Spend", round(customer_features["total_spend"].mean(), 2))
-    c4.metric("Clusters", customer_features["cluster"].nunique())
+    c1.metric("Customers", len(df))
+    c2.metric("Avg Spend", round(df["total_spend"].mean(), 2))
+    c3.metric("Avg Orders", round(df["total_orders"].mean(), 2))
+    c4.metric("Clusters", df["cluster"].nunique())
 
-    st.divider()
-    st.subheader("Customer Explorer")
+    st.subheader("📈 Overall Customer Distribution")
+
+    cluster_counts = df["cluster"].value_counts().sort_index()
+    labels = [CLUSTER_LABELS[c] for c in cluster_counts.index]
+    values = cluster_counts.values
+    total = values.sum()
+
+    def autopct_func(pct):
+        count = int(round(pct * total / 100.0))
+        return f"{count} ({pct:.1f}%)"
+
+    fig, ax = plt.subplots(figsize=(8, 8))
+    ax.pie(values, labels=labels, autopct=autopct_func, startangle=90)
+    ax.axis("equal")
+    st.pyplot(fig)
+
+    st.subheader("🔍 Individual Customer Intelligence")
 
     selected_customer = st.selectbox(
-        "Select Customer ID",
-        customer_features["customer_id"].unique()
+        "Select Customer",
+        df["customer_id"].unique()
     )
 
-    row = customer_features[
-        customer_features["customer_id"] == selected_customer
-    ]
-
+    row = df[df["customer_id"] == selected_customer]
     X_row = row[feature_cols]
-    X_row_scaled = scaler.transform(X_row)
+    X_scaled = scaler.transform(X_row)
 
-    predicted_value = value_model.predict(X_row_scaled)[0]
-    stability_prob = stability_model.predict_proba(X_row_scaled)[0][1]
-    confidence_score = round(1 - stability_prob, 2)
+    predicted_value = value_model.predict(X_scaled)[0]
+    risk_prob = stability_model.predict_proba(X_scaled)[0][1]
+    confidence = round(1 - risk_prob, 2)
 
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Cluster ID", int(row["cluster"].values[0]))
+    m1.metric("Cluster", CLUSTER_LABELS[int(row["cluster"].values[0])])
     m2.metric("Predicted Value", f"{predicted_value:,.2f}")
-    m3.metric("Stability Risk", f"{stability_prob * 100:.1f}%")
-    m4.metric("Confidence Score", confidence_score)
+    m3.metric("Risk %", f"{risk_prob*100:.1f}")
+    m4.metric("Confidence", confidence)
 
-    st.progress(confidence_score)
+    st.progress(confidence)
 
-    st.subheader("Similar Customers")
-
-    similarity_scores = cosine_similarity(X_row_scaled, scaled_features)[0]
-    customer_features["similarity"] = similarity_scores
-
-    similar_customers = (
-        customer_features
-        .sort_values("similarity", ascending=False)
-        .iloc[1:6][["customer_id", "similarity", "total_spend"]]
+    st.subheader("🎯 Recommended Action Strategy")
+    st.success(
+        f"""
+        {CLUSTER_ACTIONS[int(row['cluster'].values[0])]}
+        Risk Level: {'LOW' if risk_prob < 0.3 else 'MEDIUM' if risk_prob < 0.6 else 'HIGH'}
+        Confidence Score: {confidence}
+        """
     )
 
-    st.dataframe(similar_customers, use_container_width=True)
+    st.subheader("⬇️ Download Intelligence Report")
 
-    st.subheader("Decision Recommendation")
-
-    if stability_prob < 0.3:
-        st.success("Low risk customer. Focus on loyalty programs and premium offers.")
-    elif stability_prob < 0.6:
-        st.warning("Moderate risk customer. Engagement and targeted promotions advised.")
-    else:
-        st.error("High risk customer. Immediate retention actions recommended.")
-
-    st.divider()
-    st.subheader("Export")
-
-    export_df = row.copy()
-    export_df["predicted_value"] = predicted_value
-    export_df["stability_risk"] = stability_prob
-    export_df["confidence_score"] = confidence_score
+    df["cluster_label"] = df["cluster"].map(CLUSTER_LABELS)
 
     st.download_button(
-        label="Download Customer Intelligence Report",
-        data=export_df.to_csv(index=False),
-        file_name="customer_intelligence_report.csv",
+        "Download CSV Report",
+        df.to_csv(index=False),
+        file_name="customer_genome_intelligence_report.csv",
         mime="text/csv"
     )
+
+st.markdown(
+    "<h3 style='color:#22c55e; text-align:center;'>Developed by Anurag Kumar Singh</h3>",
+    unsafe_allow_html=True
+)
