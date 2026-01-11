@@ -27,7 +27,11 @@ Most customer analytics projects fail because they:
 
 This system is built to address those exact gaps.
 
-<img width="222" height="823" alt="image" src="https://github.com/user-attachments/assets/218ee31f-8672-4670-92e1-3be61cda2189" />
+<img width="339" height="802" alt="image" src="https://github.com/user-attachments/assets/33074f61-6d9d-40a0-839a-60ebcc0da511" />
+<img width="1919" height="1079" alt="Screenshot 2026-01-10 220100" src="https://github.com/user-attachments/assets/5be1cc12-cc43-4bbd-8d0c-047b7768d59f" />
+<img width="1919" height="1012" alt="Screenshot 2026-01-10 215404" src="https://github.com/user-attachments/assets/8692202d-922d-457d-a0c2-9786d629cd7f" />
+
+
 
 
 
