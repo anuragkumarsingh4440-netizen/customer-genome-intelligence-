@@ -12,7 +12,7 @@ Instead of stopping at clustering or prediction, this system focuses on:
 - Confidence-driven recommendations
 - Practical actions that can be executed in real business environments
 
-The application is implemented as an interactive Streamlit dashboard backed by machine learning models trained on customer behavioral features.
+The application is implemented as an interactive Streamlit dashboard backed by machine learning models trained on customer behavioral features.<br>
 DEMO VIDEO LINK = https://www.linkedin.com/posts/anurag-kumar-singh4440_customer-genome-intelligence-built-a-customer-activity-7415797799054778368-P0ZX?utm_source=share&utm_medium=member_desktop&rcm=ACoAAD2NwdkBVynk1_PhoRha6EEqB01AQC-0U50
 ---
 
